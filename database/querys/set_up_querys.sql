@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS `sigadica`.`curso` (
     `nome` VARCHAR(255) NOT NULL,
     `ano_curriculo` VARCHAR(255),
     `situacao` VARCHAR(255) NOT NULL,
-    `data_inclusao` timestamp default current_timestamp,
-    `data_alteracao`timestamp default current_timestamp,
+    `data_inclusao` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `data_alteracao`TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     KEY (`nome`)
 ) ENGINE=INNODB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ---s20soidk2du298d---
@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS `sigadica`.`periodo` (
     `codigo_disciplina` VARCHAR(6) NOT NULL,
     `periodo` INTEGER,
     `ativo` boolean default true,
-    `data_inclusao` timestamp default current_timestamp,
-    `data_alteracao`timestamp default current_timestamp,
+    `data_inclusao` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `data_alteracao`TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     KEY (`codigo_disciplina`),
     KEY (`id_curso`),
     UNIQUE KEY `curso_disciplina` (`id_curso`,`codigo_disciplina`)
@@ -29,15 +29,15 @@ CREATE TABLE IF NOT EXISTS `sigadica`.`disciplina` (
     `carga_pratica` INTEGER,
     `extensao` INTEGER,
     `descricao` text,
-    `data_inclusao` timestamp default current_timestamp,
-    `data_alteracao`timestamp default current_timestamp
+    `data_inclusao` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `data_alteracao`TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=INNODB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ---s20soidk2du298d---
 CREATE TABLE IF NOT EXISTS `sigadica`.`requisito` (
     `codigo_disciplina` VARCHAR(6) NOT NULL,
     `codigo_disciplina_requisito` VARCHAR(6) NOT NULL,
-    `data_inclusao` timestamp default current_timestamp,
-    `data_alteracao`timestamp default current_timestamp,
+    `data_inclusao` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `data_alteracao`TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY `requisito_disciplina` (`codigo_disciplina`,`codigo_disciplina_requisito`)
 ) ENGINE=INNODB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ---s20soidk2du298d---
