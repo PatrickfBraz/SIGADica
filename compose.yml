@@ -28,4 +28,21 @@ services:
       MYSQL_DB_HOST: mysql-database
       MYSQL_DB_PORT: 3306
       MYSQL_DB_NAME: sigadica
+
+  # Servico de crud da plataforma SIGADica
+  crud-api:
+    container_name: crud-api
+    build:
+      context: ./crud_api/
+      dockerfile: Dockerfile
+    depends_on:
+      - mysql-database
+    environment:
+      MYSQL_DB_USER: root
+      MYSQL_DB_PASSWORD: encn9dgo
+      MYSQL_DB_HOST: mysql-database
+      MYSQL_DB_PORT: 3306
+      MYSQL_DB_NAME: sigadica
       CONTEXT: CONTAINER
+    ports:
+      - "80:80"
