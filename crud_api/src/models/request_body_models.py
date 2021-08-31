@@ -12,13 +12,15 @@ class InserirCurso(BaseModel):
     ano_curriculo: Optional[str]
     situacao: str
 
-class InserirPeriodo(BaseModel):
+
+class InserirCadastroDisciplinaCurso(BaseModel):
     """
     Corpo esperado pela chamada de criação de entidade periodo
     """
     id_curso: int
-    codigo_disciplina: str
+    id_disciplina: str
     periodo: int
+    categoria_disciplina: str
 
 
 class InserirDisciplina(BaseModel):
@@ -46,12 +48,13 @@ class InserirDisciplinaCurso(BaseModel):
     """
     id_curso: int
     codigo_disciplina: str
-    periodo: int
+    categoria_disciplina: Optional[str] = 'obrigatoria'
+    periodo: Optional[int] = None
     creditos: int
-    carga_teorica: Optional[int]
-    carga_pratica: Optional[int]
-    extensao: Optional[int]
-    descricao: Optional[str]
+    carga_teorica: Optional[int] = None
+    carga_pratica: Optional[int] = None
+    extensao: Optional[int] = None
+    descricao: Optional[str] = None
 
     @validator('codigo_disciplina')
     def codigo_disciplina_must_have_6_digits(cls, value):
@@ -60,12 +63,14 @@ class InserirDisciplinaCurso(BaseModel):
         return value
 
 
-class InserirDisciplinaRequisito(BaseModel):
+class InserirCadastroRequisitoDisciplina(BaseModel):
     """
     Corpo esperado pela chamada de criação de entidade requisito
     """
-    codigo_disciplina: str
-    codigo_disciplina_requisito: str
+    codigo_disciplina: Optional[str] = None
+    codigo_disciplina_requisito: Optional[str] = None
+    id_disciplina: Optional[int] = None
+    id_disciplina_requisito: Optional[int] = None
 
     @validator('codigo_disciplina')
     def codigo_disciplina_must_have_6_digits(cls, value):

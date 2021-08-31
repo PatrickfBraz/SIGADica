@@ -21,8 +21,6 @@ class RespostaCriacaoCurso(BaseModel):
     nome: str
     ano_curriculo: Optional[str]
     situacao: str
-    data_inclusao: str
-    data_alteracao: str
 
 
 class RespostaBuscaCurso(BaseModel):
@@ -36,14 +34,13 @@ class RespostaCriacaoDisciplina(BaseModel):
     """
     Corpo esperado pela chamada de criação de entidade disciplina
     """
+    id_disciplina: int
     codigo_disciplina: str
     creditos: int
     carga_teorica: Optional[int]
     carga_pratica: Optional[int]
     extensao: Optional[int]
     descricao: Optional[str]
-    data_inclusao: str
-    data_alteracao: str
 
 
 class RespostaBuscaDisciplina(BaseModel):
@@ -51,7 +48,6 @@ class RespostaBuscaDisciplina(BaseModel):
     Corpo esperado pela chamada de criação de entidade disciplina
     """
     disciplinas: List[RespostaCriacaoDisciplina]
-    mensagem: str
 
 
 class RespostaCriacaoDisciplinaCurso(BaseModel):
@@ -60,6 +56,30 @@ class RespostaCriacaoDisciplinaCurso(BaseModel):
     periodo
     """
     mensagem: str
+
+
+class DefinicaoDisciplinaCurso(BaseModel):
+    id_curso: int
+    nome: str
+    situacao: Optional[str]
+    codigo_disciplina: str
+    id_disciplina: int
+    curso_ativo: bool
+    categoria_disciplina: str
+    periodo: Optional[int]
+    creditos: Optional[int]
+    carga_teorica: Optional[int]
+    carga_pratica: Optional[int]
+    extensao: Optional[int]
+    descricao: Optional[str]
+
+
+class RespostaBuscaDisciplinaCurso(BaseModel):
+    """
+    Corpo esperado pela chamada de criação da relação entre a entidade curso e entidade disciplina por intermédio do
+    periodo
+    """
+    disciplinas: List[DefinicaoDisciplinaCurso]
 
 
 class RespostaCriacaoDisciplinaRequisito(BaseModel):
