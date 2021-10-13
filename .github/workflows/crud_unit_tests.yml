@@ -1,0 +1,37 @@
+name: CRUD API unit test
+on:
+  pull_request:
+    types:
+      - ready_for_review
+    branches:
+      - main
+    paths:
+      - 'crud_api/*'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{github.head_ref}}
+          token: ${{ github.token }}
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          if [ -f crud_api/requirements.txt ]; then pip install -r crud_api/requirements.txt; fi
+      - name: Run pylint
+        run: |
+          if [ -f crud_api/tests/sigadica.db:memory: ]; then rm crud_api/tests/sigadica.db:memory:; fi
+          cd crud_api/tests/
+          pytest unit_test.py
