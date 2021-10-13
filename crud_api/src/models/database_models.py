@@ -57,6 +57,7 @@ class Disciplina(Base):
     __tablename__ = 'disciplina'
     id_disciplina = Column(Integer, primary_key=True)
     codigo_disciplina = Column(String(6), unique=True)
+    nome = Column(String(255))
     creditos = Column(Integer)
     carga_teorica = Column(Integer)
     carga_pratica = Column(Integer)

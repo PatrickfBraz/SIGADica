@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS `sigadica`.`curso` (
 CREATE TABLE IF NOT EXISTS `sigadica`.`disciplina` (
     `id_disciplina` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `codigo_disciplina` VARCHAR(6) NOT NULL,
+    `nome` VARCHAR(255),
     `creditos` INTEGER NOT NULL,
     `carga_teorica` INTEGER,
     `carga_pratica` INTEGER,

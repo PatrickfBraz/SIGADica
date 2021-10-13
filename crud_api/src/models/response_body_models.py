@@ -35,6 +35,7 @@ class RespostaCriacaoDisciplina(BaseModel):
     Corpo esperado pela chamada de criação de entidade disciplina
     """
     id_disciplina: int
+    nome: str
     codigo_disciplina: str
     creditos: int
     carga_teorica: Optional[int]

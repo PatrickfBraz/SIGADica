@@ -248,6 +248,7 @@ def criar_disciplina_associada_curso(request_body: InserirDisciplinaCurso):
             carga_pratica=request_body.carga_pratica,
             extensao=request_body.extensao,
             descricao=request_body.descricao,
+            nome=request_body.nome
         )
         session.add(disciplina)
         session.commit()
@@ -322,6 +323,7 @@ def criar_disciplina(request_body: InserirDisciplina):
             carga_pratica=request_body.carga_pratica,
             extensao=request_body.extensao,
             descricao=request_body.descricao,
+            nome=request_body.nome
         )
         session.add(disciplina)
         session.commit()

@@ -33,6 +33,7 @@ class InserirDisciplina(BaseModel):
     carga_pratica: Optional[int]
     extensao: Optional[int]
     descricao: Optional[str]
+    nome: Optional[str]
 
     @validator('codigo_disciplina')
     def codigo_disciplina_must_have_6_digits(cls, value):
@@ -48,6 +49,7 @@ class InserirDisciplinaCurso(BaseModel):
     periodo
     """
     id_curso: int
+    nome: Optional[str]
     codigo_disciplina: str
     categoria_disciplina: Optional[str] = 'obrigatoria'
     periodo: Optional[int] = None
