@@ -1,4 +1,4 @@
-package com.example.netsalesweb
+package com.example.sigacrud
 
 import io.flutter.embedding.android.FlutterActivity
 
