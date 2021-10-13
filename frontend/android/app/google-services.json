@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "589104223343",
+    "firebase_url": "https://nets-7e858.firebaseio.com",
+    "project_id": "nets-7e858",
+    "storage_bucket": "nets-7e858.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:589104223343:android:0888be023e90794040e99a",
+        "android_client_info": {
+          "package_name": "com.openlabs.netSale"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "589104223343-0dnaiq32j55h1rmrltql0s9njnk743ai.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAEgy_ojAgAHnOE0f1Y8CIldXf0wpcjUJc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "589104223343-0dnaiq32j55h1rmrltql0s9njnk743ai.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:589104223343:android:717e2ac7c0f8f7ef40e99a",
+        "android_client_info": {
+          "package_name": "com.openlabs.netSaleWeb"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "589104223343-0dnaiq32j55h1rmrltql0s9njnk743ai.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAEgy_ojAgAHnOE0f1Y8CIldXf0wpcjUJc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "589104223343-0dnaiq32j55h1rmrltql0s9njnk743ai.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
