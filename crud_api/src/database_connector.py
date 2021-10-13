@@ -5,12 +5,12 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.engine import Engine
 from os import getenv, environ
 
-if not getenv('CONTEXT', 'LOCAL') == 'CONTAINER':
-    environ["MYSQL_DB_USER"] = 'root'
-    environ["MYSQL_DB_PASSWORD"] = 'encn9dgo'
-    environ["MYSQL_DB_HOST"] = 'localhost'
-    environ["MYSQL_DB_PORT"] = '8083'
-    environ["MYSQL_DB_NAME"] = 'ibge'
+if not getenv("CONTEXT", "LOCAL") == "CONTAINER":
+    environ["MYSQL_DB_USER"] = "root"
+    environ["MYSQL_DB_PASSWORD"] = "encn9dgo"
+    environ["MYSQL_DB_HOST"] = "localhost"
+    environ["MYSQL_DB_PORT"] = "8083"
+    environ["MYSQL_DB_NAME"] = "ibge"
 
 
 class MysqlHook:
@@ -27,14 +27,14 @@ class MysqlHook:
         self.db_session = None
 
     def get_database_engine(self) -> Engine:
-        connection_str = 'mysql+pymysql://'
-        connection_str += f'{self.user}:{self.password}@{self.host}:{self.port}/{self.db}'
+        connection_str = "mysql+pymysql://"
+        connection_str += f"{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
         try:
             self.db_engine = sqlalchemy.create_engine(connection_str,
                                                       pool_size=1,
                                                       echo=False,
                                                       connect_args={
-                                                          'connect_timeout': 30
+                                                          "connect_timeout": 30
                                                       },
                                                       execution_options={
                                                           "isolation_level": "AUTOCOMMIT"

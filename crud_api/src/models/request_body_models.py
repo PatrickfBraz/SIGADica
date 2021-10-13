@@ -37,7 +37,8 @@ class InserirDisciplina(BaseModel):
     @validator('codigo_disciplina')
     def codigo_disciplina_must_have_6_digits(cls, value):
         if len(value) != 6:
-            raise ValueError('Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
+            raise ValueError(
+                'Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
         return value
 
 
@@ -59,7 +60,8 @@ class InserirDisciplinaCurso(BaseModel):
     @validator('codigo_disciplina')
     def codigo_disciplina_must_have_6_digits(cls, value):
         if len(value) != 6:
-            raise ValueError('Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
+            raise ValueError(
+                'Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
         return value
 
 
@@ -75,11 +77,38 @@ class InserirCadastroRequisitoDisciplina(BaseModel):
     @validator('codigo_disciplina')
     def codigo_disciplina_must_have_6_digits(cls, value):
         if len(value) != 6:
-            raise ValueError('Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
+            raise ValueError(
+                'Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
         return value
 
     @validator('codigo_disciplina_requisito')
     def codigo_disciplina_requisito_must_have_6_digits(cls, value):
         if len(value) != 6:
-            raise ValueError('Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
+            raise ValueError(
+                'Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
         return value
+
+
+class CadastrarUsuario(BaseModel):
+    """
+    Corpo esperado pela chamada de criação de entidade usuario
+    """
+    matricula: str
+    email: str
+    id_curso: int
+    id_usuario: int
+
+
+class CadastrarAvaliacaoDisciplina(BaseModel):
+    """
+    Corpo esperado pela chamada de criação de entidade disciplina_avaliacao
+    """
+    id_usuario: int
+    id_disciplina: int
+    nota_monitoria: int
+    nota_dificuldade: int
+    nota_flexibilidade: int
+    nota_didatica: int
+    professor: Optional[str]
+    ano_periodo: Optional[str]
+    comentario: Optional[str]
