@@ -15,3 +15,19 @@ restart:
 	@docker-compose stop
 	@docker-compose up --force-recreate --remove-orphans -d --build
 	@docker ps
+
+remove-contaienrs:
+	@docker rm database-starter
+	@docker rm crud-api
+	@docker rm scraper-executor
+	@docker rm mysql-database
+
+reset:
+	@docker-compose stop
+	@echo "Removendo containeres"
+	@docker rm database-starter
+	@docker rm crud-api
+	@docker rm scraper-executor
+	@docker rm mysql-database
+	@docker-compose up --force-recreate --remove-orphans -d --build
+	@docker ps

@@ -12,13 +12,15 @@ class InserirCurso(BaseModel):
     ano_curriculo: Optional[str]
     situacao: str
 
-class InserirPeriodo(BaseModel):
+
+class InserirCadastroDisciplinaCurso(BaseModel):
     """
     Corpo esperado pela chamada de criação de entidade periodo
     """
     id_curso: int
-    codigo_disciplina: str
+    id_disciplina: str
     periodo: int
+    categoria_disciplina: str
 
 
 class InserirDisciplina(BaseModel):
@@ -31,11 +33,13 @@ class InserirDisciplina(BaseModel):
     carga_pratica: Optional[int]
     extensao: Optional[int]
     descricao: Optional[str]
+    nome: Optional[str]
 
     @validator('codigo_disciplina')
     def codigo_disciplina_must_have_6_digits(cls, value):
         if len(value) != 6:
-            raise ValueError('Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
+            raise ValueError(
+                'Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
         return value
 
 
@@ -45,36 +49,68 @@ class InserirDisciplinaCurso(BaseModel):
     periodo
     """
     id_curso: int
+    nome: Optional[str]
     codigo_disciplina: str
-    periodo: int
+    categoria_disciplina: Optional[str] = 'obrigatoria'
+    periodo: Optional[int] = None
     creditos: int
-    carga_teorica: Optional[int]
-    carga_pratica: Optional[int]
-    extensao: Optional[int]
-    descricao: Optional[str]
+    carga_teorica: Optional[int] = None
+    carga_pratica: Optional[int] = None
+    extensao: Optional[int] = None
+    descricao: Optional[str] = None
 
     @validator('codigo_disciplina')
     def codigo_disciplina_must_have_6_digits(cls, value):
         if len(value) != 6:
-            raise ValueError('Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
+            raise ValueError(
+                'Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
         return value
 
 
-class InserirDisciplinaRequisito(BaseModel):
+class InserirCadastroRequisitoDisciplina(BaseModel):
     """
     Corpo esperado pela chamada de criação de entidade requisito
     """
-    codigo_disciplina: str
-    codigo_disciplina_requisito: str
+    codigo_disciplina: Optional[str] = None
+    codigo_disciplina_requisito: Optional[str] = None
+    id_disciplina: Optional[int] = None
+    id_disciplina_requisito: Optional[int] = None
 
     @validator('codigo_disciplina')
     def codigo_disciplina_must_have_6_digits(cls, value):
         if len(value) != 6:
-            raise ValueError('Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
+            raise ValueError(
+                'Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
         return value
 
     @validator('codigo_disciplina_requisito')
     def codigo_disciplina_requisito_must_have_6_digits(cls, value):
         if len(value) != 6:
-            raise ValueError('Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
+            raise ValueError(
+                'Código da disciplina deve ser compsoto por 3 caracteres e 3 digitos. Ex: MMA123')
         return value
+
+
+class CadastrarUsuario(BaseModel):
+    """
+    Corpo esperado pela chamada de criação de entidade usuario
+    """
+    matricula: str
+    email: str
+    id_curso: int
+    id_usuario: int
+
+
+class CadastrarAvaliacaoDisciplina(BaseModel):
+    """
+    Corpo esperado pela chamada de criação de entidade disciplina_avaliacao
+    """
+    id_usuario: int
+    id_disciplina: int
+    nota_monitoria: int
+    nota_dificuldade: int
+    nota_flexibilidade: int
+    nota_didatica: int
+    professor: Optional[str]
+    ano_periodo: Optional[str]
+    comentario: Optional[str]

@@ -11,7 +11,7 @@ services:
     restart: on-failure
     environment:
       # this is not recomended
-      MYSQL_ROOT_PASSWORD: encn9dgo
+      MYSQL_ROOT_PASSWORD: 1234
       MYSQL_DATABASE: sigadica
 
   # Este serviço apenas executa a configuração do banco: Criação de tabelas e views
@@ -24,7 +24,7 @@ services:
       - mysql-database
     environment:
       MYSQL_DB_USER: root
-      MYSQL_DB_PASSWORD: encn9dgo
+      MYSQL_DB_PASSWORD: 1234
       MYSQL_DB_HOST: mysql-database
       MYSQL_DB_PORT: 3306
       MYSQL_DB_NAME: sigadica
@@ -39,10 +39,30 @@ services:
       - mysql-database
     environment:
       MYSQL_DB_USER: root
-      MYSQL_DB_PASSWORD: encn9dgo
+      MYSQL_DB_PASSWORD: 1234
       MYSQL_DB_HOST: mysql-database
       MYSQL_DB_PORT: 3306
       MYSQL_DB_NAME: sigadica
       CONTEXT: CONTAINER
     ports:
       - "80:80"
+
+  scraper:
+    container_name: scraper-executor
+    build:
+      context: ./scrapers/
+      dockerfile: Dockerfile
+    links:
+      - "crud-api:scraper"
+    depends_on:
+      - crud-api
+    environment:
+      API_HOST: "http://crud-api/"
+      MYSQL_DB_USER: root
+      MYSQL_DB_PASSWORD: 1234
+      MYSQL_DB_HOST: mysql-database
+      MYSQL_DB_PORT: 3306
+      MYSQL_DB_NAME: sigadica
+      CONTEXT: CONTAINER
+    ports:
+      - "8001:5432"

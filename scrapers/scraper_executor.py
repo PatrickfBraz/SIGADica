@@ -1,9 +1,6 @@
 # coding=utf-8
 """
-Pacote de implementação das funções necessárias para a criação das tabelas e views no banco de dados.
-Foi escolhido fazer a criação do banco de dados dessa maneira pois permite de maneira prática e
-rápida a criação de diversos componentes como tabelas, views, funções triggers e outros, tudo
-atraves de DDLs escritas num arquivo.
+Pacote responsável pelo controle de execução do scraper dentro do ambiente container
 """
 import logging
 import sqlalchemy
@@ -13,6 +10,7 @@ from typing import NoReturn, Union
 from time import sleep
 from sys import exit, stdout
 from os import getenv
+from scraperCurso import main
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -56,32 +54,8 @@ def get_database_engine(user: str, password: str, host: str, port: int, db: str)
         return None
 
 
-def setup_database(engine: Engine) -> NoReturn:
-    """
-    Script responsável por criar tabelas e views no banco de dados.
-    Args:
-        engine (Engine): Recebe um objeto de conexão com o banco de dados
-
-    Returns:
-        No return
-    """
-    try:
-        logger.info("Executando querys de configuração")
-        with open('querys/set_up_querys.sql') as query_file:
-            querys = query_file.read()
-        querys = querys.split('---s20soidk2du298d---')
-        with engine.connect() as conn:
-            for query in querys:
-                logger.info("Executando query: %s" % query)
-                conn.execute(query)
-        return True
-    except Exception as error:
-        logger.error("Erro ao executar configuração do banco: %s" % error)
-        return False
-
-
 if __name__ == '__main__':
-    logger.info("Iniciando setup do banco de dados")
+    logger.info("Verificando conexão com o banco de dados antes de executar o scraper")
     complete_task = False
     for tries in range(max_retries):
         engine = get_database_engine(
@@ -91,14 +65,14 @@ if __name__ == '__main__':
             port=int(getenv("MYSQL_DB_PORT")),
             db=getenv("MYSQL_DB_NAME")
         )
-        if setup_database(engine):
-            logger.info("Banco de dados configurado com sucesso!")
-            complete_task = True
-        else:
+        try:
+            if engine.connect():
+                sleep(time_sleep)
+                main()
+                exit(0)
+        except OperationalError:
             logger.info("Tentativa %s estabelecer conexão com o banco de dados" % tries)
             sleep(time_sleep)
 
-    if not complete_task:
-        logger.error("Não foi possivel configurar o banco de dados")
-        exit(1)
-    exit(0)
+    logger.error("Não foi possível estabelecer conexão com o banco de dados")
+    exit(1)

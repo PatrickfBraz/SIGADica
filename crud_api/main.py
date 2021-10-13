@@ -9,16 +9,28 @@ from os import getenv
 from http import HTTPStatus
 from fastapi import FastAPI, Response
 from src.database_connector import MysqlHook
-from src.models.response_body_models import (RespostaRaiz, RespostaBuscaDisciplina, RespostaBuscaCurso,
+from src.models.response_body_models import (RespostaRaiz, RespostaBuscaDisciplina,
+                                             RespostaBuscaCurso,
                                              RespostaCriacaoDisciplinaCurso, RespostaCriacaoCurso,
                                              RespostaCriacaoDisciplina,
-                                             RespostaCriacaoDisciplinaRequisito, RespostaCriacaoPeriodo)
+                                             RespostaBuscaDisciplinaCurso,
+                                             RespostaCriacaoDisciplinaRequisito,
+                                             RespostaCriacaoPeriodo,
+                                             RespostaCriacaoUsuario,
+                                             RespostaBuscaDisciplinasAvaliacao,
+                                             RespostaBuscaDisciplinaAvaliacaoMediaNotas)
 from src.models.request_body_models import (InserirCurso, InserirDisciplina, InserirDisciplinaCurso,
-                                            InserirDisciplinaRequisito, InserirPeriodo)
+                                            InserirCadastroRequisitoDisciplina,
+                                            InserirCadastroDisciplinaCurso, CadastrarUsuario,
+                                            CadastrarAvaliacaoDisciplina)
 from src.models.database_models import Disciplina, DisciplinaSerializer
 from src.models.database_models import Curso, CursoSerializer
 from src.models.database_models import DisciplinasCurso, DisciplinasCursoSerializer
-from src.models.database_models import Periodo, Requisito
+from src.models.database_models import CadastroDisciplinaCurso, CadastroRequisitoDisciplina
+from src.models.database_models import Usuario, AvaliacaoDisciplina
+from src.models.database_models import DisciplinasAvaliacao, DisciplinasAvaliacaoSerializer
+from src.models.database_models import (DisciplinaAvaliacaoMediaNotas,
+                                        DisciplinasAvaliacaoMediaNotasSerializer)
 from typing import Dict, Optional
 
 
@@ -91,7 +103,9 @@ def apresentacao_api():
 )
 def buscar_disciplinas(
         codigo_disciplina: Optional[str] = None,
+        id_disciplina: Optional[int] = None,
         limit: Optional[int] = 10,
+        deletado: Optional[int] = 0,
         creditos: Optional[int] = None
 ):
     session = mysql_hook.create_session()
@@ -113,6 +127,10 @@ def buscar_disciplinas(
     if codigo_disciplina:
         query = query.filter(Disciplina.codigo_disciplina == codigo_disciplina)
 
+    if id_disciplina:
+        query = query.filter(Disciplina.id_disciplina == id_disciplina)
+
+    query = query.filter(Disciplina.deletado == deletado)
     query = query.limit(limit=limit)
     result_set = serializer.dump(query.all(), many=True)
     return request_response(json_response=result_set, status_code=HTTPStatus.OK)
@@ -127,6 +145,7 @@ def buscar_cursos(
         id_curso: Optional[int] = None,
         nome: Optional[str] = None,
         situacao: Optional[str] = None,
+        deletado: Optional[int] = 0,
         limit: Optional[int] = 10
 ):
     session = mysql_hook.create_session()
@@ -151,34 +170,29 @@ def buscar_cursos(
     if situacao:
         query.filter(Curso.situacao.like(situacao))
 
+    query = query.filter(Curso.deletado == deletado)
+
     query = query.limit(limit=limit)
     result_set = serializer.dump(query.all(), many=True)
     return request_response(json_response=result_set, status_code=HTTPStatus.OK)
 
 
-# @app.get(
-#     "/curso/periodo",
-#     description="Rota responsável pela busca de informações de periodos de um dado curso",
-#     response_model=None
-# )
-# def buscar_curso_periodo():
-#     pass
-
-
 @app.get(
     "/curso/disciplinas",
     description="Rota responsável pela busca de disciplinas de um dado curso",
-    response_model=None
+    response_model=RespostaBuscaDisciplinaCurso
 )
 def buscar_curso_disciplinas(
         id_curso: Optional[int] = None,
         situacao: Optional[str] = None,
         nome: Optional[str] = None,
-        ativo: Optional[int] = 0
+        inativo: Optional[int] = 0,
+        categoria: Optional[str] = None
 ):
     session = mysql_hook.create_session()
     query = session.query(
         DisciplinasCurso.id_curso,
+        DisciplinasCurso.id_disciplina,
         DisciplinasCurso.codigo_disciplina,
         DisciplinasCurso.situacao,
         DisciplinasCurso.nome,
@@ -187,8 +201,9 @@ def buscar_curso_disciplinas(
         DisciplinasCurso.carga_pratica,
         DisciplinasCurso.extensao,
         DisciplinasCurso.descricao,
-        DisciplinasCurso.ativo,
-        DisciplinasCurso.periodo
+        DisciplinasCurso.curso_inativo,
+        DisciplinasCurso.periodo,
+        DisciplinasCurso.categoria_disciplina
     )
     serializer = DisciplinasCursoSerializer()
 
@@ -207,11 +222,12 @@ def buscar_curso_disciplinas(
         query = query.filter(DisciplinasCurso.nome.like(nome))
 
     if situacao:
-        query.filter(DisciplinasCurso.situacao.like(situacao))
+        query = query.filter(DisciplinasCurso.situacao.like(situacao))
 
-    # query = query.filter(DisciplinasCurso.ativo is True)
+    if categoria:
+        query = query.filter(DisciplinasCurso.categoria_disciplina.like(categoria))
 
-    print(query)
+    query = query.filter(DisciplinasCurso.curso_inativo == bool(inativo))
 
     result_set = serializer.dump(query.all(), many=True)
     return request_response(json_response=result_set, status_code=HTTPStatus.OK)
@@ -232,14 +248,16 @@ def criar_disciplina_associada_curso(request_body: InserirDisciplinaCurso):
             carga_pratica=request_body.carga_pratica,
             extensao=request_body.extensao,
             descricao=request_body.descricao,
+            nome=request_body.nome
         )
         session.add(disciplina)
         session.commit()
-        periodo = Periodo(
+        session.refresh(disciplina)
+        periodo = CadastroDisciplinaCurso(
             id_curso=request_body.id_curso,
-            codigo_disciplina=request_body.codigo_disciplina,
-            ativo=1,
+            id_disciplina=disciplina.id_disciplina,
             periodo=request_body.periodo,
+            categoria_disciplina=request_body.categoria_disciplina
         )
         session.add(periodo)
         session.commit()
@@ -305,6 +323,7 @@ def criar_disciplina(request_body: InserirDisciplina):
             carga_pratica=request_body.carga_pratica,
             extensao=request_body.extensao,
             descricao=request_body.descricao,
+            nome=request_body.nome
         )
         session.add(disciplina)
         session.commit()
@@ -330,16 +349,52 @@ def criar_disciplina(request_body: InserirDisciplina):
     description="Rota responsável pela criação de entidade requisito",
     response_model=RespostaCriacaoDisciplinaRequisito
 )
-def criar_requisito_disciplina(request_body: InserirDisciplinaRequisito):
+def criar_requisito_disciplina(request_body: InserirCadastroRequisitoDisciplina):
     session = mysql_hook.create_session()
     try:
-        requisito = Requisito(
-            codigo_disciplina=request_body.codigo_disciplina,
-            codigo_disciplina_requisito=request_body.codigo_disciplina_requisito
+        id_disciplina = request_body.id_disciplina
+        id_disciplina_requisito = request_body.id_disciplina_requisito
+        if not id_disciplina:
+            if not request_body.codigo_disciplina:
+                return request_response(
+                    json_response={"messagem": "Nem o código nem o id da disciplina foi informado"},
+                    status_code=HTTPStatus.BAD_REQUEST
+                )
+            verify = session.query(Disciplina.id_disciplina).filter(
+                Disciplina.codigo_disciplina == request_body.codigo_disciplina).first()
+            if not verify:
+                return request_response(
+                    json_response={"messagem": "Código da disciplina %s não encontrado" %
+                                               request_body.codigo_disciplina},
+                    status_code=HTTPStatus.BAD_REQUEST
+                )
+            else:
+                id_disciplina = verify.id_disciplina
+
+        if not id_disciplina_requisito:
+            if not request_body.codigo_disciplina_requisito:
+                return request_response(
+                    json_response={
+                        "messagem": "Nem o código nem o id da disciplina requisito foi informado"},
+                    status_code=HTTPStatus.BAD_REQUEST
+                )
+            verify = session.query(Disciplina.id_disciplina).filter(
+                Disciplina.codigo_disciplina == request_body.codigo_disciplina_requisito).first()
+            if not verify:
+                return request_response(
+                    json_response={"messagem": "Código da disciplina requisito %s não encontrado" %
+                                               request_body.codigo_disciplina_requisito},
+                    status_code=HTTPStatus.BAD_REQUEST
+                )
+            else:
+                id_disciplina_requisito = verify.id_disciplina
+
+        requisito = CadastroRequisitoDisciplina(
+            id_disciplina=id_disciplina,
+            id_disciplina_requisito=id_disciplina_requisito
         )
         session.add(requisito)
         session.commit()
-        session.refresh(requisito)
         return request_response(
             json_response={
                 "mensagem": "Objeto criado com sucesso!"
@@ -360,14 +415,14 @@ def criar_requisito_disciplina(request_body: InserirDisciplinaRequisito):
     description="Rota responsável pela criação de entidade periodo",
     response_model=RespostaCriacaoPeriodo
 )
-def criar_requisito_disciplina(request_body: InserirPeriodo):
+def criar_cadastro_disciplina_curso(request_body: InserirCadastroDisciplinaCurso):
     session = mysql_hook.create_session()
     try:
-        periodo = Periodo(
+        periodo = CadastroDisciplinaCurso(
             id_curso=request_body.id_curso,
-            codigo_disciplina=request_body.codigo_disciplina,
+            id_disciplina=request_body.id_disciplina,
             periodo=request_body.periodo,
-            ativo=1
+            categoria_disciplina=request_body.categoria_disciplina
         )
         session.add(periodo)
         session.commit()
@@ -382,6 +437,214 @@ def criar_requisito_disciplina(request_body: InserirPeriodo):
         return request_response(
             json_response={
                 "mensagem": "Erro na criação do periodo: %s" % error
+            },
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR
+        )
+
+
+@app.post(
+    "/usuario",
+    description="Rota responsável pela criação de entidade usuário",
+    response_model=RespostaCriacaoUsuario
+)
+def cadastrar_usuario(request_body: CadastrarUsuario):
+    """
+    Rota responsável pelo cadastro de usuarios
+    Args:
+        request_body (CadastrarUsuario): Corpo json esperado pela requisição
+
+    Returns:
+        Uma mensagem de aviso caso tenha ocorrido sucesso ou falha
+    """
+    session = mysql_hook.create_session()
+    try:
+        usuario = Usuario(
+            id_usuario=request_body.id_usuario,
+            id_curso=request_body.id_curso,
+            email=request_body.email,
+            matricula=request_body.matricula
+        )
+        session.add(usuario)
+        session.commit()
+        session.refresh(usuario)
+
+        return request_response(
+            json_response={
+                "mensagem": "Usuário cadastrado com sucesso!"
+            },
+            status_code=HTTPStatus.OK
+        )
+
+    except Exception as error:
+        return request_response(
+            json_response={
+                "mensagem": "Erro na criação do usuário: %s" % error
+            },
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR
+        )
+
+
+@app.post(
+    "/disciplina/avaliacao",
+    description="Rota responsável pela criação de avaliação de disciplina",
+    response_model=RespostaCriacaoPeriodo
+)
+def cadastrar_avaliacao(request_body: CadastrarAvaliacaoDisciplina):
+    """
+    Rota responsável pelo cadastro de avaliações de disciplinas
+    Args:
+        request_body (CadastrarAvaliacaoDisciplina): Objeto json esperado no corpo da requisição
+
+    Returns:
+        uma mensagem de aviso caso tenha dado sucesso ou falha
+    """
+    session = mysql_hook.create_session()
+    try:
+        avaliacao = AvaliacaoDisciplina(
+            id_usuario=request_body.id_usuario,
+            id_disciplina=request_body.id_disciplina,
+            nota_monitoria=request_body.nota_monitoria,
+            nota_dificuldade=request_body.nota_dificuldade,
+            nota_flexibilidade=request_body.nota_flexibilidade,
+            nota_didatica=request_body.nota_didatica,
+            professor=request_body.professor,
+            ano_periodo=request_body.ano_periodo,
+            comentario=request_body.comentario,
+        )
+        session.add(avaliacao)
+        session.commit()
+        session.refresh(avaliacao)
+
+        return request_response(
+            json_response={
+                "mensagem": "Avaliação de disciplina cadastrada com sucesso!"
+            },
+            status_code=HTTPStatus.OK
+        )
+
+    except Exception as error:
+        return request_response(
+            json_response={
+                "mensagem": "Erro no cadastro de avaliação: %s" % error
+            },
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR
+        )
+
+
+@app.get(
+    "/disciplina/avaliacao",
+    description="Rota responsável pela bsuca de disciplinas e suas avaliações",
+    response_model=RespostaBuscaDisciplinasAvaliacao
+)
+def buscar_avaliacoes_disciplinas(
+        id_curso: int,
+        id_disciplina: Optional[int],
+        limit: Optional[int] = 1000
+):
+    """
+    Rota responsável pela busca de avaliações de disciplinas
+    Args:
+        id_curso (int): id do curso
+        id_disciplina (int): id da disciplina
+        limit (int):  limite de elementos que devem ser retornados
+
+    Returns:
+        Retorna um JSON ARRAY com as informações buscadas
+    """
+    try:
+        session = mysql_hook.create_session()
+        query = session.query(
+            DisciplinasAvaliacao.id_disciplina,
+            DisciplinasAvaliacao.descricao,
+            DisciplinasAvaliacao.id_avaliacao,
+            DisciplinasAvaliacao.data_cadastro,
+            DisciplinasAvaliacao.nota_didatica,
+            DisciplinasAvaliacao.nota_dificuldade,
+            DisciplinasAvaliacao.nota_flexibilidade,
+            DisciplinasAvaliacao.nota_monitoria,
+            DisciplinasAvaliacao.professor,
+            DisciplinasAvaliacao.ano_periodo,
+            DisciplinasAvaliacao.comentario
+        )
+        serializer = DisciplinasAvaliacaoSerializer()
+
+        if not id_curso:
+            return request_response(
+                json_response={
+                    "error": "É necessário informar o ID do curso para realizar a busca"
+                },
+                status_code=HTTPStatus.BAD_REQUEST
+            )
+
+        query = query.filter(DisciplinasAvaliacao.id_curso == id_curso)
+
+        if id_disciplina:
+            query = query.filter(DisciplinasAvaliacao.id_disciplina == id_disciplina)
+
+        query = query.limit(limit=limit)
+
+        result_set = serializer.dump(query.all(), many=True)
+        return request_response(json_response=result_set, status_code=HTTPStatus.OK)
+    except Exception as error:
+        return request_response(
+            json_response={
+                "error": "Ocorreu um erro ao buscar as avaliações de disciplinas: %s" % error
+            },
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR
+        )
+
+@app.get(
+    "/disciplina/avaliacao/notas",
+    description="Rota responsável pela bsuca da média de notas de uma avaliação",
+    response_model=RespostaBuscaDisciplinaAvaliacaoMediaNotas
+)
+def buscar_notas_medias_avaliacoes_disciplinas(
+        id_curso: int,
+        id_disciplina: int,
+        limit: Optional[int] = 1000
+):
+    """
+    Rota responsável pela bsuca da média de notas de uma avaliação
+    Args:
+        id_curso (int): id do curso
+        id_disciplina (int): id da disciplina
+        limit (int):  limite de elementos que devem ser retornados
+
+    Returns:
+        Retorna um JSON com as informações buscadas para a dada disciplina
+    """
+    try:
+        session = mysql_hook.create_session()
+        query = session.query(
+            DisciplinaAvaliacaoMediaNotas.id_disciplina,
+            DisciplinaAvaliacaoMediaNotas.id_curso,
+            DisciplinaAvaliacaoMediaNotas.nota_didatica,
+            DisciplinaAvaliacaoMediaNotas.nota_dificuldade,
+            DisciplinaAvaliacaoMediaNotas.nota_monitoria,
+            DisciplinaAvaliacaoMediaNotas.nota_flexibilidade
+        )
+        serializer = DisciplinasAvaliacaoMediaNotasSerializer()
+
+        if not id_curso or not id_disciplina:
+            return request_response(
+                json_response={
+                    "error": "É necessário informar o ID do curso e disciplina para realizar a busca"
+                },
+                status_code=HTTPStatus.BAD_REQUEST
+            )
+
+        query = query.filter(DisciplinaAvaliacaoMediaNotas.id_curso == id_curso)
+        query = query.filter(DisciplinaAvaliacaoMediaNotas.id_disciplina == id_disciplina)
+
+        query = query.limit(limit=limit)
+
+        result_set = serializer.dump(query.first(), many=False)
+        return request_response(json_response=result_set, status_code=HTTPStatus.OK)
+    except Exception as error:
+        return request_response(
+            json_response={
+                "error": "Ocorreu um erro ao buscar as notas das "
+                         "avaliações de disciplinas: %s" % error
             },
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR
         )

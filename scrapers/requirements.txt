@@ -1,0 +1,5 @@
+cssselect
+lxml
+requests
+SQLAlchemy==1.4.16
+PyMySQL==0.9.3
