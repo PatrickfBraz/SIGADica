@@ -1,3 +1,10 @@
+# coding=utf-8
+"""
+Pacote de implementação das funções necessárias para a criação das tabelas e views no banco de dados.
+Foi escolhido fazer a criação do banco de dados dessa maneira pois permite de maneira prática e
+rápida a criação de diversos componentes como tabelas, views, funções triggers e outros, tudo
+atraves de DDLs escritas num arquivo.
+"""
 import logging
 import sqlalchemy
 from sqlalchemy.exc import OperationalError
@@ -11,11 +18,23 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler(stdout))
 
-max_retries = 6
-time_sleep = 5
+max_retries = 20
+time_sleep = 6
 
 
-def get_database_engine(user, password, host, port, db) -> Union[Engine, NoReturn]:
+def get_database_engine(user: str, password: str, host: str, port: int, db: str) -> Union[
+    Engine, NoReturn]:
+    """
+    Função responsável por criar objeto de conexão com o banco de dados
+    Args:
+        user (str): Nome de usuário
+        password (str): Senha
+        host (str): Host do bancod e dados
+        port (str): Porta de acesso
+        db (str): Nome do database
+    Returns:
+        Objeto de conexão com o banco de dados
+    """
     connection_str = 'mysql+pymysql://'
     connection_str += f'{user}:{password}@{host}:{port}/{db}'
     try:
@@ -37,7 +56,15 @@ def get_database_engine(user, password, host, port, db) -> Union[Engine, NoRetur
         return None
 
 
-def setup_database(engine: Engine):
+def setup_database(engine: Engine) -> NoReturn:
+    """
+    Script responsável por criar tabelas e views no banco de dados.
+    Args:
+        engine (Engine): Recebe um objeto de conexão com o banco de dados
+
+    Returns:
+        No return
+    """
     try:
         logger.info("Executando querys de configuração")
         with open('querys/set_up_querys.sql') as query_file:
@@ -61,7 +88,7 @@ if __name__ == '__main__':
             user=getenv("MYSQL_DB_USER"),
             password=getenv("MYSQL_DB_PASSWORD"),
             host=getenv("MYSQL_DB_HOST"),
-            port=getenv("MYSQL_DB_PORT"),
+            port=int(getenv("MYSQL_DB_PORT")),
             db=getenv("MYSQL_DB_NAME")
         )
         if setup_database(engine):
