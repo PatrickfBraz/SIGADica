@@ -7,7 +7,7 @@ import json
 import logging
 from os import getenv
 from http import HTTPStatus
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, Depends
 from src.database_connector import MysqlHook
 from src.models.response_body_models import (RespostaRaiz, RespostaBuscaDisciplina,
                                              RespostaBuscaCurso,
@@ -32,6 +32,9 @@ from src.models.database_models import DisciplinasAvaliacao, DisciplinasAvaliaca
 from src.models.database_models import (DisciplinaAvaliacaoMediaNotas,
                                         DisciplinasAvaliacaoMediaNotasSerializer)
 from typing import Dict, Optional
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import create_engine
+from src.models.database_models import Base as DatabaseBaseModels
 
 
 def get_api_version():
@@ -49,8 +52,8 @@ app = FastAPI(
     version=get_api_version(),
 )
 
-mysql_hook = MysqlHook()
-engine = mysql_hook.get_database_engine()
+hook = MysqlHook()
+mysql_session = hook.create_session()
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +63,27 @@ else:
     logger.setLevel(logging.INFO)
 
 
+# Dependency
+def get_database_session():
+    if getenv("CONTEX", "CONTAINER").upper() == "API_TEST":
+        engine = create_engine('sqlite:///sigadica.db:memory:',
+                               connect_args={"check_same_thread": False})
+        DatabaseBaseModels.metadata.create_all(engine)
+        session = sessionmaker(engine)()
+        try:
+            yield session
+        except Exception as error:
+            logger.exception(error)
+    else:
+        engine = hook.get_database_engine()
+        session = mysql_session(bind=engine.connect())
+        try:
+            yield session
+        except Exception as error:
+            logger.exception(error)
+
+
+# response utils
 def request_response(
         json_response: Dict,
         status_code: int,
@@ -106,9 +130,9 @@ def buscar_disciplinas(
         id_disciplina: Optional[int] = None,
         limit: Optional[int] = 10,
         deletado: Optional[int] = 0,
-        creditos: Optional[int] = None
+        creditos: Optional[int] = None,
+        session: Session = Depends(get_database_session)
 ):
-    session = mysql_hook.create_session()
     query = session.query(
         Disciplina.codigo_disciplina,
         Disciplina.descricao,
@@ -146,9 +170,9 @@ def buscar_cursos(
         nome: Optional[str] = None,
         situacao: Optional[str] = None,
         deletado: Optional[int] = 0,
-        limit: Optional[int] = 10
+        limit: Optional[int] = 10,
+        session: Session = Depends(get_database_session)
 ):
-    session = mysql_hook.create_session()
     query = session.query(
         Curso.id_curso,
         Curso.numero_periodos,
@@ -187,9 +211,9 @@ def buscar_curso_disciplinas(
         situacao: Optional[str] = None,
         nome: Optional[str] = None,
         inativo: Optional[int] = 0,
-        categoria: Optional[str] = None
+        categoria: Optional[str] = None,
+        session: Session = Depends(get_database_session)
 ):
-    session = mysql_hook.create_session()
     query = session.query(
         DisciplinasCurso.id_curso,
         DisciplinasCurso.id_disciplina,
@@ -238,8 +262,8 @@ def buscar_curso_disciplinas(
     description="Rota responsável pela criação de uma disciplina associada a um curso",
     response_model=RespostaCriacaoDisciplinaCurso
 )
-def criar_disciplina_associada_curso(request_body: InserirDisciplinaCurso):
-    session = mysql_hook.create_session()
+def criar_disciplina_associada_curso(request_body: InserirDisciplinaCurso,
+                                     session: Session = Depends(get_database_session)):
     try:
         disciplina = Disciplina(
             codigo_disciplina=request_body.codigo_disciplina,
@@ -281,8 +305,7 @@ def criar_disciplina_associada_curso(request_body: InserirDisciplinaCurso):
     description="Rota responsável pela criação de entidade curso",
     response_model=RespostaCriacaoCurso
 )
-def criar_curso(request_body: InserirCurso):
-    session = mysql_hook.create_session()
+def criar_curso(request_body: InserirCurso, session: Session = Depends(get_database_session)):
     try:
         curso = Curso(
             numero_periodos=request_body.numero_periodos,
@@ -313,8 +336,8 @@ def criar_curso(request_body: InserirCurso):
     description="Rota responsável pela criação de entidade disciplina",
     response_model=RespostaCriacaoDisciplina
 )
-def criar_disciplina(request_body: InserirDisciplina):
-    session = mysql_hook.create_session()
+def criar_disciplina(request_body: InserirDisciplina,
+                     session: Session = Depends(get_database_session)):
     try:
         disciplina = Disciplina(
             codigo_disciplina=request_body.codigo_disciplina,
@@ -349,8 +372,8 @@ def criar_disciplina(request_body: InserirDisciplina):
     description="Rota responsável pela criação de entidade requisito",
     response_model=RespostaCriacaoDisciplinaRequisito
 )
-def criar_requisito_disciplina(request_body: InserirCadastroRequisitoDisciplina):
-    session = mysql_hook.create_session()
+def criar_requisito_disciplina(request_body: InserirCadastroRequisitoDisciplina,
+                               session: Session = Depends(get_database_session)):
     try:
         id_disciplina = request_body.id_disciplina
         id_disciplina_requisito = request_body.id_disciplina_requisito
@@ -415,8 +438,8 @@ def criar_requisito_disciplina(request_body: InserirCadastroRequisitoDisciplina)
     description="Rota responsável pela criação de entidade periodo",
     response_model=RespostaCriacaoPeriodo
 )
-def criar_cadastro_disciplina_curso(request_body: InserirCadastroDisciplinaCurso):
-    session = mysql_hook.create_session()
+def criar_cadastro_disciplina_curso(request_body: InserirCadastroDisciplinaCurso,
+                                    session: Session = Depends(get_database_session)):
     try:
         periodo = CadastroDisciplinaCurso(
             id_curso=request_body.id_curso,
@@ -447,7 +470,8 @@ def criar_cadastro_disciplina_curso(request_body: InserirCadastroDisciplinaCurso
     description="Rota responsável pela criação de entidade usuário",
     response_model=RespostaCriacaoUsuario
 )
-def cadastrar_usuario(request_body: CadastrarUsuario):
+def cadastrar_usuario(request_body: CadastrarUsuario,
+                      session: Session = Depends(get_database_session)):
     """
     Rota responsável pelo cadastro de usuarios
     Args:
@@ -456,7 +480,7 @@ def cadastrar_usuario(request_body: CadastrarUsuario):
     Returns:
         Uma mensagem de aviso caso tenha ocorrido sucesso ou falha
     """
-    session = mysql_hook.create_session()
+
     try:
         usuario = Usuario(
             id_usuario=request_body.id_usuario,
@@ -489,7 +513,8 @@ def cadastrar_usuario(request_body: CadastrarUsuario):
     description="Rota responsável pela criação de avaliação de disciplina",
     response_model=RespostaCriacaoPeriodo
 )
-def cadastrar_avaliacao(request_body: CadastrarAvaliacaoDisciplina):
+def cadastrar_avaliacao(request_body: CadastrarAvaliacaoDisciplina,
+                        session: Session = Depends(get_database_session)):
     """
     Rota responsável pelo cadastro de avaliações de disciplinas
     Args:
@@ -498,7 +523,7 @@ def cadastrar_avaliacao(request_body: CadastrarAvaliacaoDisciplina):
     Returns:
         uma mensagem de aviso caso tenha dado sucesso ou falha
     """
-    session = mysql_hook.create_session()
+
     try:
         avaliacao = AvaliacaoDisciplina(
             id_usuario=request_body.id_usuario,
@@ -539,7 +564,8 @@ def cadastrar_avaliacao(request_body: CadastrarAvaliacaoDisciplina):
 def buscar_avaliacoes_disciplinas(
         id_curso: int,
         id_disciplina: Optional[int],
-        limit: Optional[int] = 1000
+        limit: Optional[int] = 1000,
+        session: Session = Depends(get_database_session)
 ):
     """
     Rota responsável pela busca de avaliações de disciplinas
@@ -552,7 +578,7 @@ def buscar_avaliacoes_disciplinas(
         Retorna um JSON ARRAY com as informações buscadas
     """
     try:
-        session = mysql_hook.create_session()
+
         query = session.query(
             DisciplinasAvaliacao.id_disciplina,
             DisciplinasAvaliacao.descricao,
@@ -593,6 +619,7 @@ def buscar_avaliacoes_disciplinas(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR
         )
 
+
 @app.get(
     "/disciplina/avaliacao/notas",
     description="Rota responsável pela bsuca da média de notas de uma avaliação",
@@ -601,7 +628,8 @@ def buscar_avaliacoes_disciplinas(
 def buscar_notas_medias_avaliacoes_disciplinas(
         id_curso: int,
         id_disciplina: int,
-        limit: Optional[int] = 1000
+        limit: Optional[int] = 1000,
+        session: Session = Depends(get_database_session)
 ):
     """
     Rota responsável pela bsuca da média de notas de uma avaliação
@@ -614,7 +642,7 @@ def buscar_notas_medias_avaliacoes_disciplinas(
         Retorna um JSON com as informações buscadas para a dada disciplina
     """
     try:
-        session = mysql_hook.create_session()
+
         query = session.query(
             DisciplinaAvaliacaoMediaNotas.id_disciplina,
             DisciplinaAvaliacaoMediaNotas.id_curso,

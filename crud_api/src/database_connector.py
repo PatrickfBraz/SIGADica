@@ -47,12 +47,12 @@ class MysqlHook:
             self.logger.error(error)
             raise error
 
-    def create_session(self) -> Session:
+    def create_session(self):
         if self.db_engine:
-            self.db_session = sessionmaker(self.db_engine)()
+            self.db_session = sessionmaker(self.db_engine)
             return self.db_session
         else:
-            self.db_session = sessionmaker(self.get_database_engine)()
+            self.db_session = sessionmaker(self.get_database_engine)
             return self.db_session
 
     def __del__(self):
