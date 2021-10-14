@@ -1,3 +1,4 @@
+import 'package:SigaCrud/ui/pages/signUpScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:SigaCrud/ui/pages/home.dart';
 import 'package:SigaCrud/ui/pages/teste.dart';
@@ -6,6 +7,7 @@ import 'package:SigaCrud/ui/pages/loginScreen.dart';
 const String homeRoute = '/';
 const String loginRoute = '/login';
 const String testeRoute = '/teste';
+const String registerRoute = '/register';
 
 class Routers {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -20,7 +22,9 @@ class Routers {
       case loginRoute:
         builder = (BuildContext _) => LoginScreen();
         break;
-
+      case registerRoute:
+        builder = (BuildContext _) => SignUpScreen();
+        break;
 
       default:
         return MaterialPageRoute(

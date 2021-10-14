@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class MainAppBar extends AppBar {
   final String appBarTitle;
-  MainAppBar({@required this.appBarTitle})
+  MainAppBar({required this.appBarTitle})
       : super(
           centerTitle: false,
           title: Text(
